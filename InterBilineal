@@ -1,47 +1,41 @@
 import cv2
 import numpy as np
 
-def bilinear_interpolation(img, scale_factor):
-    height, width = img.shape[:2]
-    new_height = int(height * scale_factor)
-    new_width = int(width * scale_factor)
+def interpolacion_bilineal(img, nuevo_altura,nuevo_anchura):
+    altura, anchura = img.shape[:2]
+    nueva_imagen = np.zeros((nuevo_altura,nuevo_anchura,3),
+                            dtype=np.uint8)
+    factor_x = float(altura)/nuevo_altura
+    factor_y = float(anchura)/nuevo_anchura 
+    for x in range(nuevo_altura):
+        for y in range(nuevo_anchura):
+            x_original = x * factor_x
+            y_original = y * factor_y
+            x1 =int(x_original)
+            y1 =int(y_original)
+            x2 = min(x1+1,altura-1)
+            y2 = min(y1+1,anchura-1)
+            dx = x_original-x1
+            dy = y_original-y1
+            nueva_imagen[x , y] = ((1-dy)*((1-dx)*img[x1,y1]+
+                                           img[x1,y2]*dx)+
+                                   ((1-dx)*img[x2,y1]+
+                                    img[x2,y2]*dx)*dy)
+    return nueva_imagen
 
-    # Crear una nueva imagen vacía con las dimensiones escaladas
-    result_img = np.zeros((new_height, new_width, img.shape[2]), dtype=np.uint8)
+ruta_imagen = 'lena256color.png'
+ruta_resultado ='ImResul.png'
+imagen = cv2.imread(ruta_imagen)
 
-    # Coordenadas de píxeles en la imagen original y la imagen escalada
-    x_ratio = float(width - 1) / (new_width - 1) if new_width > 1 else 0
-    y_ratio = float(height - 1) / (new_height - 1) if new_height > 1 else 0
 
-    for i in range(new_height):
-        for j in range(new_width):
-            x = int(x_ratio * j)
-            y = int(y_ratio * i)
-            x_diff = (x_ratio * j) - x
-            y_diff = (y_ratio * i) - y
+if imagen is not None:
+    
+   image_interve = interpolacion_bilineal(imagen,128,128)
+   cv2.imshow('ImagenOriginal', imagen)
+   cv2.imshow('ImagenInterpolada', image_interve)
+   cv2.waitKey(0) 
+   cv2.destroyAllWindows()
+   cv2.imwrite(ruta_resultado, image_interve)
 
-            # Fórmula de interpolación bilineal
-            top_left = img[y, x] * (1 - x_diff) * (1 - y_diff)
-            top_right = img[y, x + 1] * x_diff * (1 - y_diff)
-            bottom_left = img[y + 1, x] * (1 - x_diff) * y_diff
-            bottom_right = img[y + 1, x + 1] * x_diff * y_diff
-
-            result_img[i, j] = top_left + top_right + bottom_left + bottom_right
-
-    return result_img
-
-# Cargar la imagen
-input_image_path = 'ruta_de_tu_imagen.jpg'
-original_image = cv2.imread(input_image_path)
-
-# Factor de escala (cambiar según sea necesario)
-scale_factor = 2.0
-
-# Aplicar interpolación bilineal
-rescaled_image = bilinear_interpolation(original_image, scale_factor)
-
-# Mostrar la imagen original y la imagen escalada
-cv2.imshow('Original', original_image)
-cv2.imshow('Bilinear Interpolation', rescaled_image)
-cv2.waitKey(0)
-cv2.destroyAllWindows()
+else:
+    print('No se pudo cargar la imagen.')
